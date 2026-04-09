@@ -1,0 +1,297 @@
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --work:       #e05c5c;
+  --short:      #4caf88;
+  --long:       #4a90d9;
+  --bg:         #1a1a2e;
+  --surface:    #16213e;
+  --surface2:   #0f3460;
+  --text:       #eaeaea;
+  --text-muted: #8a8a9a;
+  --accent:     var(--work);
+  --radius:     14px;
+  --transition: 0.35s ease;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.app {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: color var(--transition), background var(--transition);
+}
+.settings-btn:hover { color: var(--text); background: var(--surface2); }
+
+.settings-panel {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.settings-panel h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.settings-panel.hidden { display: none; }
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.setting-row label { font-size: 0.9rem; color: var(--text); }
+.setting-row input[type="number"] {
+  width: 70px;
+  background: var(--surface2);
+  border: 1px solid #2a4070;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  padding: 6px 10px;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.setting-row input[type="number"]:focus { border-color: var(--accent); }
+
+.btn-save {
+  align-self: flex-end;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 20px;
+  transition: opacity var(--transition);
+}
+.btn-save:hover { opacity: 0.85; }
+
+.mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--surface);
+  border-radius: 50px;
+  padding: 5px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-radius: 50px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 7px 18px;
+  transition: background var(--transition), color var(--transition);
+}
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.task-section { width: 100%; }
+
+.task-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 1rem;
+  padding: 12px 16px;
+  outline: none;
+  text-align: center;
+  transition: border-color var(--transition);
+}
+.task-input::placeholder { color: var(--text-muted); }
+.task-input:focus { border-color: var(--accent); }
+
+.timer-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+.progress-ring {
+  width: 220px;
+  height: 220px;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: var(--surface2);
+  stroke-width: 10;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 615.75;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear, stroke var(--transition);
+}
+
+.timer-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.time {
+  font-size: 3.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.mode-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.sessions {
+  display: flex;
+  gap: 10px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface2);
+  transition: background var(--transition), transform var(--transition);
+}
+.dot.done { background: var(--accent); }
+.dot.current { background: var(--accent); transform: scale(1.25); opacity: 0.6; }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border: none;
+  border-radius: 50px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 14px 48px;
+  text-transform: uppercase;
+  transition: opacity var(--transition), transform var(--transition);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-icon {
+  background: var(--surface);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.25rem;
+  height: 46px;
+  width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition);
+}
+.btn-icon:hover { background: var(--surface2); color: var(--text); }
+
+.stats {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.app.mode-work  { --accent: var(--work); }
+.app.mode-short { --accent: var(--short); }
+.app.mode-long  { --accent: var(--long); }
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent); }
+  70%  { box-shadow: 0 0 0 16px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.btn-primary.running { animation: pulse 2s infinite; }
+
+@media (max-width: 360px) {
+  .time { font-size: 2.8rem; }
+  .timer-wrapper { width: 190px; height: 190px; }
+  .progress-ring { width: 190px; height: 190px; }
+}
