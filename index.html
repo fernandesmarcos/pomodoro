@@ -3,90 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pomodoro Timer</title>
+  <title>Pomodoro</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app" id="app">
-    <header class="header">
-      <h1 class="logo">🍅 Pomodoro</h1>
-      <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
-    </header>
 
-    <!-- Settings Panel -->
+  <!-- Ambient glow (bottom) -->
+  <div class="glow" id="glow"></div>
+
+  <!-- Settings trigger + dropdown -->
+  <div class="top-right">
+    <button class="menu-btn" id="menuBtn" aria-label="Settings">•••</button>
     <div class="settings-panel hidden" id="settingsPanel">
-      <h2>Settings</h2>
+
       <div class="setting-row">
-        <label for="workDuration">Work (minutes)</label>
-        <input type="number" id="workDuration" min="1" max="60" value="25" />
+        <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        <span class="s-label">Focus</span>
+        <div class="s-value">
+          <input type="number" id="workDuration" min="1" max="60" value="25" />
+          <span class="s-unit">min</span>
+        </div>
       </div>
+
       <div class="setting-row">
-        <label for="shortBreak">Short Break (minutes)</label>
-        <input type="number" id="shortBreak" min="1" max="30" value="5" />
+        <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+        <span class="s-label">Short break</span>
+        <div class="s-value">
+          <input type="number" id="shortBreak" min="1" max="30" value="5" />
+          <span class="s-unit">min</span>
+        </div>
       </div>
+
       <div class="setting-row">
-        <label for="longBreak">Long Break (minutes)</label>
-        <input type="number" id="longBreak" min="5" max="60" value="15" />
+        <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="s-label">Long break</span>
+        <div class="s-value">
+          <input type="number" id="longBreak" min="5" max="60" value="15" />
+          <span class="s-unit">min</span>
+        </div>
       </div>
+
       <div class="setting-row">
-        <label for="longBreakAfter">Long break after (sessions)</label>
-        <input type="number" id="longBreakAfter" min="1" max="10" value="4" />
+        <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="s-label">Long break after</span>
+        <div class="s-value">
+          <input type="number" id="longBreakAfter" min="1" max="12" value="4" />
+          <span class="s-unit">sessions</span>
+        </div>
       </div>
-      <button class="btn-save" id="saveSettings">Save</button>
-    </div>
 
-    <!-- Mode Tabs -->
-    <nav class="mode-tabs">
-      <button class="tab active" data-mode="work">Work</button>
-      <button class="tab" data-mode="short">Short Break</button>
-      <button class="tab" data-mode="long">Long Break</button>
-    </nav>
-
-    <!-- Task Input -->
-    <div class="task-section">
-      <input
-        type="text"
-        id="taskInput"
-        class="task-input"
-        placeholder="What are you working on?"
-        maxlength="80"
-      />
-    </div>
-
-    <!-- Timer -->
-    <div class="timer-wrapper">
-      <svg class="progress-ring" viewBox="0 0 220 220" aria-hidden="true">
-        <circle class="ring-bg" cx="110" cy="110" r="98" />
-        <circle class="ring-progress" id="ringProgress" cx="110" cy="110" r="98" />
-      </svg>
-      <div class="timer-display">
-        <span class="time" id="timeDisplay">25:00</span>
-        <span class="mode-label" id="modeLabel">Focus Time</span>
-      </div>
-    </div>
-
-    <!-- Session Dots -->
-    <div class="sessions" id="sessionsContainer" aria-label="Session progress"></div>
-
-    <!-- Controls -->
-    <div class="controls">
-      <button class="btn-icon" id="resetBtn" aria-label="Reset timer">↺</button>
-      <button class="btn-primary" id="startBtn">Start</button>
-      <button class="btn-icon" id="skipBtn" aria-label="Skip to next">⏭</button>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-value" id="completedSessions">0</span>
-        <span class="stat-label">Sessions today</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value" id="totalMinutes">0</span>
-        <span class="stat-label">Minutes focused</span>
-      </div>
     </div>
   </div>
+
+  <!-- Timer -->
+  <main class="stage">
+    <div class="timer-block">
+      <div class="time" id="timeDisplay">25:00</div>
+      <div class="mode-label" id="modeLabel">Focus mode</div>
+    </div>
+
+    <button class="play-btn" id="playBtn" aria-label="Start">
+      <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+  </main>
+
+  <!-- Bottom bar -->
+  <footer class="bar">
+    <div class="bar-left">
+      <span class="bar-label">Task</span>
+      <input type="text" id="taskInput" class="bar-task" placeholder="What are you working on?" maxlength="60" />
+    </div>
+    <div class="bar-right">
+      <span class="bar-label">Sessions</span>
+      <span class="bar-val" id="completedSessions">0</span>
+      <span class="bar-label">Focused</span>
+      <span class="bar-val" id="totalMinutes">0</span>
+      <span class="bar-label">min</span>
+    </div>
+  </footer>
 
   <script src="app.js"></script>
 </body>
