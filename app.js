@@ -8,9 +8,9 @@ const DEFAULT_CONFIG = {
 };
 
 const ACCENT = {
-  work:  '#e03030',
-  short: '#3d8fd4',
-  long:  '#3d8fd4',
+  work:  '#66FF00',
+  short: '#FFE600',
+  long:  '#F5603A',
 };
 
 const MODE_LABELS = {
@@ -30,8 +30,13 @@ let sessionCount = 0;
 let completedAll = 0;
 let totalFocused = 0;
 
+// Ambient sound state
+let ambientCtx      = null;
+let ambientSource   = null;
+let ambientGainNode = null;
+let ambientPlaying  = false;
+
 // ── DOM ──
-const glow          = document.getElementById('glow');
 const menuBtn       = document.getElementById('menuBtn');
 const settingsPanel = document.getElementById('settingsPanel');
 const timeDisplay   = document.getElementById('timeDisplay');
@@ -39,9 +44,10 @@ const modeLabel     = document.getElementById('modeLabel');
 const playBtn       = document.getElementById('playBtn');
 const iconPlay      = document.getElementById('iconPlay');
 const iconPause     = document.getElementById('iconPause');
-const taskInput     = document.getElementById('taskInput');
 const completedEl   = document.getElementById('completedSessions');
+const sessionGoalEl = document.getElementById('sessionGoal');
 const minutesEl     = document.getElementById('totalMinutes');
+const soundBtn      = document.getElementById('soundBtn');
 
 // ── Init ──
 function init() {
@@ -57,7 +63,6 @@ function start() {
   iconPlay.classList.add('hidden');
   iconPause.classList.remove('hidden');
   playBtn.classList.add('paused');
-  glow.classList.add('on');
   intervalId = setInterval(tick, 1000);
 }
 
@@ -66,14 +71,12 @@ function pause() {
   iconPlay.classList.remove('hidden');
   iconPause.classList.add('hidden');
   playBtn.classList.remove('paused');
-  glow.classList.remove('on', 'bright');
   clearInterval(intervalId);
   intervalId = null;
 }
 
 function tick() {
   remaining--;
-  glow.classList.toggle('bright');
   if (remaining <= 0) {
     remaining = 0;
     render();
@@ -93,13 +96,14 @@ function onEnd() {
     completedAll++;
     totalFocused += config.workDuration;
     saveTodayStats();
-    completedEl.textContent = completedAll;
-    minutesEl.textContent   = totalFocused;
+    minutesEl.textContent = totalFocused;
 
     if (sessionCount >= config.longBreakAfter) {
       sessionCount = 0;
+      completedEl.textContent = sessionCount;
       switchMode('long');
     } else {
+      completedEl.textContent = sessionCount;
       switchMode('short');
     }
   } else {
@@ -131,7 +135,6 @@ function render() {
 
 function applyAccent() {
   document.documentElement.style.setProperty('--accent', ACCENT[mode]);
-  glow.style.background = ACCENT[mode];
   modeLabel.textContent = MODE_LABELS[mode];
 }
 
@@ -141,6 +144,7 @@ function applyConfig() {
   document.getElementById('shortBreak').value     = config.shortBreak;
   document.getElementById('longBreak').value      = config.longBreak;
   document.getElementById('longBreakAfter').value = config.longBreakAfter;
+  sessionGoalEl.textContent = config.longBreakAfter;
   applyAccent();
 }
 
@@ -156,6 +160,8 @@ function onSettingChange() {
     longBreakAfter: clamp('longBreakAfter', 1, 12, DEFAULT_CONFIG.longBreakAfter),
   };
   localStorage.setItem('pomodoroConfig', JSON.stringify(config));
+  sessionGoalEl.textContent = config.longBreakAfter;
+
   pause();
   totalSeconds = mins(modeDuration());
   remaining    = totalSeconds;
@@ -184,11 +190,78 @@ function loadTodayStats() {
       totalFocused = d.totalFocused || 0;
     }
   } catch (_) {}
-  completedEl.textContent = completedAll;
+  completedEl.textContent = sessionCount;
   minutesEl.textContent   = totalFocused;
 }
 
-// ── Audio ──
+// ── Ambient Sound ──
+function createPinkNoiseBuffer(ctx) {
+  const sr  = ctx.sampleRate;
+  const len = sr * 3;
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+    for (let i = 0; i < len; i++) {
+      const wn = Math.random() * 2 - 1;
+      b0 = 0.99886*b0 + wn*0.0555179;
+      b1 = 0.99332*b1 + wn*0.0750759;
+      b2 = 0.96900*b2 + wn*0.1538520;
+      b3 = 0.86650*b3 + wn*0.3104856;
+      b4 = 0.55000*b4 + wn*0.5329522;
+      b5 = -0.7616*b5 - wn*0.0168980;
+      d[i] = (b0+b1+b2+b3+b4+b5+b6+wn*0.5362) * 0.11;
+      b6 = wn * 0.115926;
+    }
+  }
+  return buf;
+}
+
+function startAmbient() {
+  if (ambientPlaying) return;
+  try {
+    if (!ambientCtx) ambientCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ambientCtx.state === 'suspended') ambientCtx.resume();
+
+    const buf = createPinkNoiseBuffer(ambientCtx);
+    ambientSource = ambientCtx.createBufferSource();
+    ambientSource.buffer = buf;
+    ambientSource.loop = true;
+
+    const lp = ambientCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 600;
+    lp.Q.value = 0.5;
+
+    ambientGainNode = ambientCtx.createGain();
+    ambientGainNode.gain.setValueAtTime(0, ambientCtx.currentTime);
+    ambientGainNode.gain.linearRampToValueAtTime(0.4, ambientCtx.currentTime + 1.5);
+
+    ambientSource.connect(lp);
+    lp.connect(ambientGainNode);
+    ambientGainNode.connect(ambientCtx.destination);
+    ambientSource.start();
+
+    ambientPlaying = true;
+    soundBtn.classList.add('playing');
+  } catch (_) {}
+}
+
+function stopAmbient() {
+  if (!ambientPlaying || !ambientCtx || !ambientGainNode) return;
+  const t = ambientCtx.currentTime;
+  ambientGainNode.gain.setValueAtTime(ambientGainNode.gain.value, t);
+  ambientGainNode.gain.linearRampToValueAtTime(0, t + 0.8);
+  setTimeout(() => {
+    try { ambientSource.stop(); } catch (_) {}
+    ambientSource   = null;
+    ambientGainNode = null;
+    ambientPlaying  = false;
+    soundBtn.classList.remove('playing');
+  }, 900);
+}
+
+// ── Audio (chime) ──
 function playChime() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -230,6 +303,8 @@ function fmt(s) {
 // ── Events ──
 playBtn.addEventListener('click', () => running ? pause() : start());
 
+soundBtn.addEventListener('click', () => ambientPlaying ? stopAmbient() : startAmbient());
+
 menuBtn.addEventListener('click', e => {
   e.stopPropagation();
   const opening = settingsPanel.classList.contains('hidden');
@@ -250,7 +325,6 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.target === taskInput) return;
   if (e.code === 'Space') { e.preventDefault(); running ? pause() : start(); }
 });
 
