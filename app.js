@@ -31,10 +31,9 @@ let completedAll = 0;
 let totalFocused = 0;
 
 // Ambient sound state
-let ambientCtx      = null;
-let ambientSource   = null;
-let ambientGainNode = null;
-let ambientPlaying  = false;
+let ambientAudio   = null;
+let ambientFadeId  = null;
+let ambientPlaying = false;
 
 // ── DOM ──
 const menuBtn       = document.getElementById('menuBtn');
@@ -195,27 +194,41 @@ function loadTodayStats() {
 }
 
 // ── Ambient Sound ──
-function createPinkNoiseBuffer(ctx) {
-  const sr  = ctx.sampleRate;
-  const len = sr * 3;
-  const buf = ctx.createBuffer(2, len, sr);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = buf.getChannelData(ch);
-    let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
-    for (let i = 0; i < len; i++) {
-      const wn = Math.random() * 2 - 1;
-      b0 = 0.99886*b0 + wn*0.0555179;
-      b1 = 0.99332*b1 + wn*0.0750759;
-      b2 = 0.96900*b2 + wn*0.1538520;
-      b3 = 0.86650*b3 + wn*0.3104856;
-      b4 = 0.55000*b4 + wn*0.5329522;
-      b5 = -0.7616*b5 - wn*0.0168980;
-      d[i] = (b0+b1+b2+b3+b4+b5+b6+wn*0.5362) * 0.11;
-      b6 = wn * 0.115926;
-    }
-  }
-  return buf;
+function startAmbient() {
+  if (ambientPlaying) return;
+  clearInterval(ambientFadeId);
+  ambientAudio = new Audio('rain-forest.wav');
+  ambientAudio.loop = true;
+  ambientAudio.volume = 0;
+  ambientAudio.play().catch(() => {});
+  let vol = 0;
+  ambientFadeId = setInterval(() => {
+    vol = Math.min(1, vol + 0.05);
+    if (ambientAudio) ambientAudio.volume = vol;
+    if (vol >= 1) clearInterval(ambientFadeId);
+  }, 75);
+  ambientPlaying = true;
+  soundBtn.classList.add('playing');
 }
+
+function stopAmbient() {
+  if (!ambientPlaying || !ambientAudio) return;
+  clearInterval(ambientFadeId);
+  const audio = ambientAudio;
+  let vol = audio.volume;
+  ambientFadeId = setInterval(() => {
+    vol = Math.max(0, vol - 0.05);
+    audio.volume = vol;
+    if (vol <= 0) {
+      clearInterval(ambientFadeId);
+      audio.pause();
+      if (ambientAudio === audio) ambientAudio = null;
+      ambientPlaying = false;
+      soundBtn.classList.remove('playing');
+    }
+  }, 75);
+}
+
 
 function startAmbient() {
   if (ambientPlaying) return;
