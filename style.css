@@ -276,10 +276,9 @@ body {
   border-radius: 1.5px;
   transform-origin: bottom;
 }
-.sound-bar:nth-child(1) { height: 5px; }
-.sound-bar:nth-child(2) { height: 11px; }
-.sound-bar:nth-child(3) { height: 8px; }
-.sound-bar:nth-child(4) { height: 14px; }
+.sound-bar:nth-child(1) { height: 6px; }
+.sound-bar:nth-child(2) { height: 13px; }
+.sound-bar:nth-child(3) { height: 9px; }
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
