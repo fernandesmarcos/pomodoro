@@ -253,8 +253,8 @@ function stopAmbient() {
 function animateBars() {
   const bars   = soundBtn.querySelectorAll('.sound-bar');
   const data   = new Uint8Array(ambientAnalyser.frequencyBinCount);
-  const smooth = [5, 11, 8, 14];
-  const bands  = [[0, 15], [16, 39], [40, 79], [80, 127]];
+  const smooth = [6, 13, 9]; // matches initial CSS heights
+  const bands  = [[0, 20], [21, 63], [64, 127]];
 
   function frame() {
     if (!ambientPlaying) return;
