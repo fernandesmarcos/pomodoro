@@ -8,9 +8,6 @@
 </head>
 <body>
 
-  <!-- Ambient glow (bottom) -->
-  <div class="glow" id="glow"></div>
-
   <!-- Settings trigger + dropdown -->
   <div class="top-right">
     <button class="menu-btn" id="menuBtn" aria-label="Settings">•••</button>
@@ -58,8 +55,8 @@
   <!-- Timer -->
   <main class="stage">
     <div class="timer-block">
-      <div class="time" id="timeDisplay">25:00</div>
       <div class="mode-label" id="modeLabel">Focus mode</div>
+      <div class="time" id="timeDisplay">25:00</div>
     </div>
 
     <button class="play-btn" id="playBtn" aria-label="Start">
@@ -71,12 +68,21 @@
   <!-- Bottom bar -->
   <footer class="bar">
     <div class="bar-left">
-      <span class="bar-label">Task</span>
-      <input type="text" id="taskInput" class="bar-task" placeholder="What are you working on?" maxlength="60" />
+      <button class="sound-btn" id="soundBtn" aria-label="Toggle ambient sound">
+        <span class="sound-bars">
+          <span class="sound-bar"></span>
+          <span class="sound-bar"></span>
+          <span class="sound-bar"></span>
+          <span class="sound-bar"></span>
+        </span>
+        <span class="sound-name">Rain Forest</span>
+      </button>
     </div>
     <div class="bar-right">
       <span class="bar-label">Sessions</span>
       <span class="bar-val" id="completedSessions">0</span>
+      <span class="bar-sep">/</span>
+      <span class="bar-val" id="sessionGoal">4</span>
       <span class="bar-label">Focused</span>
       <span class="bar-val" id="totalMinutes">0</span>
       <span class="bar-label">min</span>
