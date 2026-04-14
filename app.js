@@ -73,7 +73,7 @@ function pause() {
 
 function tick() {
   remaining--;
-  glow.classList.toggle('bright'); // subtle pulse each second
+  glow.classList.toggle('bright');
   if (remaining <= 0) {
     remaining = 0;
     render();
