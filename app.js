@@ -31,9 +31,13 @@ let completedAll = 0;
 let totalFocused = 0;
 
 // Ambient sound state
-let ambientAudio   = null;
-let ambientFadeId  = null;
-let ambientPlaying = false;
+let ambientAudio    = null;
+let ambientCtx      = null;
+let ambientGain     = null;
+let ambientAnalyser = null;
+let ambientAnimId   = null;
+let ambientFadeId   = null;
+let ambientPlaying  = false;
 
 // ── DOM ──
 const menuBtn       = document.getElementById('menuBtn');
@@ -194,84 +198,79 @@ function loadTodayStats() {
 }
 
 // ── Ambient Sound ──
-function startAmbient() {
-  if (ambientPlaying) return;
-  clearInterval(ambientFadeId);
+function initAmbient() {
+  if (ambientCtx) return;
   ambientAudio = new Audio('rain-forest.wav');
   ambientAudio.loop = true;
-  ambientAudio.volume = 0;
-  ambientAudio.play().catch(() => {});
-  let vol = 0;
-  ambientFadeId = setInterval(() => {
-    vol = Math.min(1, vol + 0.05);
-    if (ambientAudio) ambientAudio.volume = vol;
-    if (vol >= 1) clearInterval(ambientFadeId);
-  }, 75);
-  ambientPlaying = true;
-  soundBtn.classList.add('playing');
+  ambientCtx      = new (window.AudioContext || window.webkitAudioContext)();
+  ambientAnalyser = ambientCtx.createAnalyser();
+  ambientAnalyser.fftSize = 256;
+  ambientGain = ambientCtx.createGain();
+  ambientGain.gain.value = 0;
+  const src = ambientCtx.createMediaElementSource(ambientAudio);
+  src.connect(ambientAnalyser);
+  ambientAnalyser.connect(ambientGain);
+  ambientGain.connect(ambientCtx.destination);
 }
-
-function stopAmbient() {
-  if (!ambientPlaying || !ambientAudio) return;
-  clearInterval(ambientFadeId);
-  const audio = ambientAudio;
-  let vol = audio.volume;
-  ambientFadeId = setInterval(() => {
-    vol = Math.max(0, vol - 0.05);
-    audio.volume = vol;
-    if (vol <= 0) {
-      clearInterval(ambientFadeId);
-      audio.pause();
-      if (ambientAudio === audio) ambientAudio = null;
-      ambientPlaying = false;
-      soundBtn.classList.remove('playing');
-    }
-  }, 75);
-}
-
 
 function startAmbient() {
   if (ambientPlaying) return;
   try {
-    if (!ambientCtx) ambientCtx = new (window.AudioContext || window.webkitAudioContext)();
+    initAmbient();
     if (ambientCtx.state === 'suspended') ambientCtx.resume();
-
-    const buf = createPinkNoiseBuffer(ambientCtx);
-    ambientSource = ambientCtx.createBufferSource();
-    ambientSource.buffer = buf;
-    ambientSource.loop = true;
-
-    const lp = ambientCtx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 600;
-    lp.Q.value = 0.5;
-
-    ambientGainNode = ambientCtx.createGain();
-    ambientGainNode.gain.setValueAtTime(0, ambientCtx.currentTime);
-    ambientGainNode.gain.linearRampToValueAtTime(0.4, ambientCtx.currentTime + 1.5);
-
-    ambientSource.connect(lp);
-    lp.connect(ambientGainNode);
-    ambientGainNode.connect(ambientCtx.destination);
-    ambientSource.start();
-
+    ambientAudio.play().catch(() => {});
+    clearInterval(ambientFadeId);
+    let vol = 0;
+    ambientFadeId = setInterval(() => {
+      vol = Math.min(1, vol + 0.05);
+      ambientGain.gain.value = vol;
+      if (vol >= 1) clearInterval(ambientFadeId);
+    }, 75);
     ambientPlaying = true;
     soundBtn.classList.add('playing');
+    animateBars();
   } catch (_) {}
 }
 
 function stopAmbient() {
-  if (!ambientPlaying || !ambientCtx || !ambientGainNode) return;
-  const t = ambientCtx.currentTime;
-  ambientGainNode.gain.setValueAtTime(ambientGainNode.gain.value, t);
-  ambientGainNode.gain.linearRampToValueAtTime(0, t + 0.8);
-  setTimeout(() => {
-    try { ambientSource.stop(); } catch (_) {}
-    ambientSource   = null;
-    ambientGainNode = null;
-    ambientPlaying  = false;
-    soundBtn.classList.remove('playing');
-  }, 900);
+  if (!ambientPlaying) return;
+  clearInterval(ambientFadeId);
+  let vol = ambientGain.gain.value;
+  ambientFadeId = setInterval(() => {
+    vol = Math.max(0, vol - 0.05);
+    ambientGain.gain.value = vol;
+    if (vol <= 0) {
+      clearInterval(ambientFadeId);
+      ambientAudio.pause();
+      ambientPlaying = false;
+      soundBtn.classList.remove('playing');
+      cancelAnimationFrame(ambientAnimId);
+      soundBtn.querySelectorAll('.sound-bar').forEach(b => { b.style.height = ''; });
+    }
+  }, 75);
+}
+
+function animateBars() {
+  const bars   = soundBtn.querySelectorAll('.sound-bar');
+  const data   = new Uint8Array(ambientAnalyser.frequencyBinCount);
+  const smooth = [5, 11, 8, 14];
+  const bands  = [[0, 15], [16, 39], [40, 79], [80, 127]];
+
+  function frame() {
+    if (!ambientPlaying) return;
+    ambientAnalyser.getByteFrequencyData(data);
+    bands.forEach(([start, end], i) => {
+      let sum = 0;
+      for (let j = start; j <= end; j++) sum += data[j];
+      const avg    = sum / (end - start + 1);
+      const target = 2 + (avg / 255) * 12;
+      smooth[i]    = smooth[i] * 0.6 + target * 0.4;
+      bars[i].style.height = `${smooth[i].toFixed(1)}px`;
+    });
+    ambientAnimId = requestAnimationFrame(frame);
+  }
+
+  ambientAnimId = requestAnimationFrame(frame);
 }
 
 // ── Audio (chime) ──
